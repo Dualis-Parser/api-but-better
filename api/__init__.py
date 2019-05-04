@@ -19,7 +19,7 @@ def log_response_info(response):
     return response
 
 
-@server.route("/dualis/user/", methods=["GET", ])
+@server.route("/dualis/user", methods=["GET", ])
 def user_info():
     """
     Parse the user info. Required body json params are:
