@@ -73,7 +73,7 @@ MODULE_DATA = {
     'credits': '',
     'exams_url': '',
     'passed': False,
-    'grades': '',
+    'grades': [],
     'semesters': ''
 }
 
@@ -84,3 +84,10 @@ USER_DATA = {
     'modules': [],
     'semesters': []
 }
+
+EXAM_DATA = {
+    'name': '',
+    'grade': None,
+}
+
+GRADE_FILTERS = ["not set yet", "noch nicht gesetzt"]

@@ -1,7 +1,7 @@
 import requests
 
 from dualis import login
-from dualis.user import parse_users_name, parse_users_modules
+from dualis.user import parse_users_name, parse_users_modules, filter_modules, parse_grades
 from dualis.util import *
 from utils import constants
 from utils.mail import is_valid_email
@@ -96,4 +96,9 @@ def parse_user_information(username, password):
         # get all modules for all semesters
         user_data["modules"] = parse_users_modules(semester_html)
 
+        for module in user_data["modules"]:
+            exams_url = constants.DUALIS_BASE_URI + module["exams_url"]
+            module["grades"] = list(parse_grades(make_request(session, exams_url, method="get").text))
+
+        user_data["modules"] = filter_modules(user_data["modules"])
     return user_data
