@@ -64,7 +64,7 @@ def exception_handler(error):
 
     # determine whether the exception is a HTTP exception
     if (issubclass(type(error), werkzeug.exceptions.HTTPException)):
-        http_result = constants.HTTP_ERRORS.get(error.code, None).copy()
+        http_result = constants.HTTP_ERRORS.get(error.code, None)
 
         # if there is no template for this error create it
         if (http_result is None):
