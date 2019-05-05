@@ -4,6 +4,7 @@ import werkzeug.exceptions
 from flask import Flask, request, jsonify
 
 from api.user.requests import get_user_information
+from database.mysql_connection import MySQL
 from utils import constants
 
 server = Flask(__name__)
@@ -47,6 +48,11 @@ def user_info():
         # should never happen, internal server error
         http_result = constants.HTTP_500_INTERNAL_SERVER_ERROR.copy()
         http_result["details"] = "WTF? Impossible point of code reached"
+
+    mysql = MySQL()
+    mysql.query(
+        "INSERT INTO api_request VALUES(%s, CURRENT_TIMESTAMP(), 1) ON DUPLICATE KEY UPDATE last_update=CURRENT_TIMESTAMP(), request_count = request_count + 1",
+        (result.get("username"),))
 
     return jsonify(http_result), http_result["code"]
 
