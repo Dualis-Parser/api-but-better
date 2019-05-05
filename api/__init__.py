@@ -4,7 +4,7 @@ import logging
 import werkzeug.exceptions
 from flask import Flask, request, jsonify
 
-from api.user.requests import get_user_information
+from api.user.requests import get_user_information, is_authenticated_user
 from database.mysql_connection import MySQL
 from utils import constants
 
@@ -66,6 +66,31 @@ def user_info():
             )
         mysql.close()
 
+    else:
+        # should never happen, internal server error
+        http_result = constants.HTTP_500_INTERNAL_SERVER_ERROR.copy()
+        http_result["details"] = "WTF? Impossible point of code reached"
+
+    return jsonify(http_result), http_result["code"]
+
+
+@server.route("/dualis/user/validate", methods=["GET", ])
+def is_valid_user():
+    """
+    Return whether the given user data is valid
+
+    :return: true or false
+    :rtype: bool
+    """
+    result = is_authenticated_user(request.get_json())
+    if (result == constants.DUALIS_ERROR):
+        # dualis error
+        http_result = constants.HTTP_503_SERVICE_UNAVAILABLE.copy()
+        http_result["details"] = "dualis request failed unexpectedly"
+    elif result is False or result is True:
+        # send bool response
+        http_result = constants.HTTP_200_OK.copy()
+        http_result["data"] = result
     else:
         # should never happen, internal server error
         http_result = constants.HTTP_500_INTERNAL_SERVER_ERROR.copy()

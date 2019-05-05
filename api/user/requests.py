@@ -14,7 +14,9 @@ def get_user_information(request):
 
     :param request: the request json body
     :type request: dict
+
     :return: the user information
+    :rtype: tuple(int, dict)
     """
     # validate login credentials (format only)
 
@@ -33,6 +35,38 @@ def get_user_information(request):
         return constants.DUALIS_ERROR, None
 
     return constants.SUCCESS, user_info
+
+
+def is_authenticated_user(request):
+    """
+    Check whether the users data is valid
+
+    :param request: the request json body
+    :type request: dict
+
+    :return: whether the user is valid
+    :rtype: bool
+    """
+    if type(request) != dict:
+        return False
+    elif "username" not in request.keys() or "password" not in request.keys():
+        return False
+    elif not is_valid_email(request.get("username")):
+        return False
+
+    username = request.get("username")
+    password = request.get("password")
+
+    with requests.Session() as session:
+        login_res = login.do_login(session, username, password)
+
+        if (not isinstance(login_res, requests.Response)):
+            if login_res == constants.BAD_LOGIN:
+                return False
+            else:
+                return constants.DUALIS_ERROR
+        else:
+            return True
 
 
 def parse_user_information(username, password):
