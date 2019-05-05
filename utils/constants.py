@@ -2,6 +2,7 @@
 SUCCESS = 0
 BAD_LOGIN = 1
 DUALIS_ERROR = 2
+BAD_REQUEST = 3
 
 # HTTP responses
 HTTP_200_OK = {

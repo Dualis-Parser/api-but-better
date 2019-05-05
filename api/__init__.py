@@ -87,6 +87,10 @@ def is_valid_user():
         # dualis error
         http_result = constants.HTTP_503_SERVICE_UNAVAILABLE.copy()
         http_result["details"] = "dualis request failed unexpectedly"
+    elif result == constants.BAD_REQUEST:
+        # malformed request
+        http_result = constants.HTTP_400_BAD_REQUEST.copy()
+        http_result["details"] = "the server couldn't understand your request"
     elif result is False or result is True:
         # send bool response
         http_result = constants.HTTP_200_OK.copy()
