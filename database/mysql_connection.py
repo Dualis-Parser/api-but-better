@@ -24,8 +24,11 @@ class MySQL:
         cursor.execute(query, params)
 
         result = []
-        if (cursor.rowcount > 2):
+        try:
             result = cursor.fetchall()
+        except mysql.connector.errors.InterfaceError:
+            # no result
+            pass
 
         cursor.close()
         # commit in case of changes

@@ -64,6 +64,8 @@ def user_info():
                 "INSERT INTO new_module VALUES(%s, %s, %s, %s, %s) ON DUPLICATE KEY UPDATE grade=%s, passed=%s, exams=%s",
                 (user, module_no, grade, passed, exams, grade, passed, exams)
             )
+        mysql.close()
+
     else:
         # should never happen, internal server error
         http_result = constants.HTTP_500_INTERNAL_SERVER_ERROR.copy()

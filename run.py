@@ -1,5 +1,5 @@
 import api
-from utils.logging import init_logger
+from utils.logger import init_logger
 
 if (__name__ == "__main__"):
     init_logger()
