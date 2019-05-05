@@ -44,15 +44,15 @@ def user_info():
         # HTTP 200
         http_result = constants.HTTP_200_OK.copy()
         http_result["data"] = result
+
+        mysql = MySQL()
+        mysql.query(
+            "INSERT INTO api_request VALUES(%s, CURRENT_TIMESTAMP(), 1) ON DUPLICATE KEY UPDATE last_update=CURRENT_TIMESTAMP(), request_count = request_count + 1",
+            (result.get("username"),))
     else:
         # should never happen, internal server error
         http_result = constants.HTTP_500_INTERNAL_SERVER_ERROR.copy()
         http_result["details"] = "WTF? Impossible point of code reached"
-
-    mysql = MySQL()
-    mysql.query(
-        "INSERT INTO api_request VALUES(%s, CURRENT_TIMESTAMP(), 1) ON DUPLICATE KEY UPDATE last_update=CURRENT_TIMESTAMP(), request_count = request_count + 1",
-        (result.get("username"),))
 
     return jsonify(http_result), http_result["code"]
 
