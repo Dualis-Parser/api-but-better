@@ -48,11 +48,11 @@ def is_authenticated_user(request):
     :rtype: bool
     """
     if type(request) != dict:
-        return False
+        return constants.BAD_REQUEST
     elif "username" not in request.keys() or "password" not in request.keys():
-        return False
+        return constants.BAD_REQUEST
     elif not is_valid_email(request.get("username")):
-        return False
+        return constants.BAD_REQUEST
 
     username = request.get("username")
     password = request.get("password")
