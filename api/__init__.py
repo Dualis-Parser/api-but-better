@@ -1,3 +1,4 @@
+import json
 import logging
 
 import werkzeug.exceptions
@@ -45,10 +46,24 @@ def user_info():
         http_result = constants.HTTP_200_OK.copy()
         http_result["data"] = result
 
+        user = result.get("username")
+
         mysql = MySQL()
         mysql.query(
             "INSERT INTO api_request VALUES(%s, CURRENT_TIMESTAMP(), 1) ON DUPLICATE KEY UPDATE last_update=CURRENT_TIMESTAMP(), request_count = request_count + 1",
-            (result.get("username"),))
+            (user,))
+        for module in result.get("modules"):
+            module_no = module.get("module_no")
+            grade = module.get("final_grade")
+            passed = module.get("passed")
+            exams = json.dumps(module.get("grades"))
+
+            grade = grade if grade.replace('.', '', 1).isdigit() else None
+
+            mysql.query(
+                "INSERT INTO new_module VALUES(%s, %s, %s, %s, %s) ON DUPLICATE KEY UPDATE grade=%s, passed=%s, exams=%s",
+                (user, module_no, grade, passed, exams, grade, passed, exams)
+            )
     else:
         # should never happen, internal server error
         http_result = constants.HTTP_500_INTERNAL_SERVER_ERROR.copy()
