@@ -5,7 +5,6 @@ import werkzeug.exceptions
 from flask import Flask, request, jsonify
 
 from api.user.requests import get_user_information, is_authenticated_user
-from database.mysql_connection import MySQL
 from utils import constants
 
 server = Flask(__name__)
@@ -48,6 +47,7 @@ def user_info():
 
         user = result.get("username")
 
+        from database.mysql_connection import MySQL
         mysql = MySQL()
         mysql.query(
             "INSERT INTO api_request VALUES(%s, CURRENT_TIMESTAMP(), 1) ON DUPLICATE KEY UPDATE last_update=CURRENT_TIMESTAMP(), request_count = request_count + 1",

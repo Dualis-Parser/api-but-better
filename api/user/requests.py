@@ -1,3 +1,6 @@
+import json
+import logging
+
 import requests
 
 from dualis import login
@@ -82,6 +85,8 @@ def parse_user_information(username, password):
     :return: the complete user information
     """
 
+    logging.info("parsing user information for %s" % username)
+
     # build the return data template
     user_data = constants.USER_DATA.copy()
     user_data["username"] = username
@@ -133,6 +138,9 @@ def parse_user_information(username, password):
         for module in user_data["modules"]:
             exams_url = constants.DUALIS_BASE_URI + module["exams_url"]
             module["grades"] = list(parse_grades(make_request(session, exams_url, method="get").text))
+
+        logging.info("parsed modules")
+        logging.debug(json.dumps(user_data["modules"], indent=2))
 
         user_data["modules"] = filter_modules(user_data["modules"])
     return user_data
