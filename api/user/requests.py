@@ -117,9 +117,12 @@ def parse_user_information(username, password):
         # navigate to the exams page
         exams_page = make_request(session, exams_page_url, None, "get", False)
 
+        logging.info("parsing semesters")
         # get all semester names and url parameters
         semesters = dict(parse_semesters(exams_page.text))
         user_data["semesters"] = list(semesters.keys())
+
+        logging.debug(json.dumps(semesters, indent=2))
 
         # remove first semester from the list, we got that html already
         curr_semester_name = list(semesters.keys())[0]
