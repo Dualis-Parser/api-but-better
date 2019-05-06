@@ -124,12 +124,8 @@ def parse_user_information(username, password):
 
         logging.debug(json.dumps(semesters, indent=2))
 
-        # remove first semester from the list, we got that html already
-        curr_semester_name = list(semesters.keys())[0]
-        semesters.pop(curr_semester_name)
-
         # get the html for all semesters
-        semester_html = {curr_semester_name: exams_page.text}
+        semester_html = {}
 
         for name, url_param in semesters.items():
             semester = make_request(session, exams_page_url + url_param, method="get")
