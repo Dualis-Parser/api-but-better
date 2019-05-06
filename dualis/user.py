@@ -1,3 +1,5 @@
+import logging
+
 from bs4 import BeautifulSoup
 
 from utils import constants
@@ -28,6 +30,7 @@ def parse_users_modules(semester_html):
     :rtype: list
     """
     modules = list()
+    logging.info("parsing users modules")
 
     for semester, html in semester_html.items():
         soup = BeautifulSoup(html, 'lxml')
@@ -37,6 +40,7 @@ def parse_users_modules(semester_html):
                 # parse the module data
                 module = parse_row_module(tr)
                 module["semesters"] = semester
+                logging.debug("\t%s" % module.get("module_name"))
 
                 # avoid duplicates if a module is present in multiple semesters
                 if (len(list(filter(lambda mod: mod["module_no"] == module["module_no"], modules))) == 0):

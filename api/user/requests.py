@@ -140,7 +140,6 @@ def parse_user_information(username, password):
             module["grades"] = list(parse_grades(make_request(session, exams_url, method="get").text))
 
         logging.info("parsed modules")
-        logging.debug(json.dumps(user_data["modules"], indent=2))
 
         user_data["modules"] = filter_modules(user_data["modules"])
     return user_data
