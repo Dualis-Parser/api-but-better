@@ -70,7 +70,9 @@ def parse_row_module(row):
     module["module_name"] = row.find_all('td')[1].text.strip()
     module["final_grade"] = row.find_all('td')[2].text.strip().replace(",", ".")
     module["credits"] = row.find_all('td')[3].text.strip()
-    module["passed"] = row.find_all('td')[4].text.strip() == "bestanden"
+
+    passed_val = row.find_all('td')[4].text.strip()
+    module["passed"] = True if passed_val == "bestanden" else False if passed_val == "unvollständig" else None
 
     # parse the exams url
     s = row.find_all('script')[0].text
