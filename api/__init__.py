@@ -3,11 +3,13 @@ import logging
 
 import werkzeug.exceptions
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 
 from api.user.requests import get_user_information, is_authenticated_user
 from utils import constants
 
 server = Flask(__name__)
+CORS(server)
 
 
 @server.before_request
@@ -30,7 +32,7 @@ def user_info():
 
     :return: the parsed user information as json (for format see documentation)
     """
-    code, result = get_user_information(request.get_json())
+    code, result = get_user_information(dict(request.args))
 
     if code == constants.BAD_LOGIN:
         # HTTP 401
@@ -82,7 +84,7 @@ def is_valid_user():
     :return: true or false
     :rtype: bool
     """
-    result = is_authenticated_user(request.get_json())
+    result = is_authenticated_user(dict(request.args))
     if (result == constants.DUALIS_ERROR):
         # dualis error
         http_result = constants.HTTP_503_SERVICE_UNAVAILABLE.copy()
