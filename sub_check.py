@@ -21,7 +21,7 @@ def check_and_send_mail(user):
     username = user[0]
     password = dec(user[1])
 
-    r = requests.get(url="https://api.gahr.dev/dualis/user", params={'username': username, 'password': password})
+    r = requests.get(url="http://localhost:9001/dualis/user", params={'username': username, 'password': password})
     user_info = r.json()
     if (user_info["code"] == 401):
         mysql.query("UPDATE `subscription` SET `valid` = FALSE WHERE `username` = ?", [username, ])
