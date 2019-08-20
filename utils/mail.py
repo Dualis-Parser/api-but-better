@@ -1,3 +1,5 @@
+import secret_config
+
 WSP = r'[ \t]'  # see 2.2.2. Structured Header Field Bodies
 CRLF = r'(?:\r\n)'  # see 2.2.3. Long Header Fields
 NO_WS_CTL = r'\x01-\x08\x0b\x0c\x0f-\x1f\x7f'  # see 3.2.1. Primitive Tokens
@@ -39,3 +41,33 @@ def is_valid_email(mail):
     import re
     pattern = re.compile(VALID_ADDRESS_REGEXP)
     return pattern.match(mail)
+
+
+def send_html_mail(name, email, subject, body:str):
+    import smtplib
+    import ssl
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
+
+    with open("utils/mail.html", encoding="utf-8") as file:
+        html = file.read()
+
+        html = html.replace("{{ name }}", name)
+        html = html.replace("{{ body }}", body.replace("\n", "<br>").replace("\n", "&nbsp;&nbsp;&nbsp;&nbsp;"))
+
+        message = MIMEMultipart()
+        message["Subject"] = subject
+        message["From"] = secret_config.mail_user
+        message["To"] = email
+
+        message.attach(MIMEText(html, "html"))
+
+        # Create secure connection with server and send email
+        context = ssl.create_default_context()
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
+            server.login(secret_config.mail_user, secret_config.mail_password)
+            server.sendmail(
+                secret_config.mail_user, email, message.as_string()
+            )
+
+        print("Sent mail to %s (%s)" % (name, email))
