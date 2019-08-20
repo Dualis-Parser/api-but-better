@@ -9,6 +9,7 @@ from dualis.util import *
 from utils import constants
 from utils.mail import is_valid_email
 from utils.make_http_request import make_request
+from utils.change_util import check_for_change
 
 
 def get_user_information(request):
@@ -141,4 +142,5 @@ def parse_user_information(username, password):
         logging.info("parsed modules")
 
         user_data["modules"] = filter_modules(user_data["modules"])
+        check_for_change(user_data["modules"], username)
     return user_data
