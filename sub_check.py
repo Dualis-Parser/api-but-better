@@ -1,5 +1,3 @@
-from multiprocessing.pool import ThreadPool as Pool
-
 import requests
 
 from database.mysql_connection import MySQL
@@ -17,40 +15,38 @@ def dec(message, password=app_secret):
     return cipher_text
 
 
-def check_and_send_mail(user):
-    username = user[0]
-    password = dec(user[1])
+def check_and_send_mail(user) -> bool:
+    username = user[1]
+    password = dec(user[2])
+
+    print("Checking for " + username)
 
     r = requests.get(url="http://localhost:9001/dualis/user", params={'username': username, 'password': password})
     user_info = r.json()
     if (user_info["code"] == 401):
-        mysql.query("UPDATE `subscription` SET `valid` = FALSE WHERE `username` = ?", [username, ])
+        mysql.query("UPDATE `course` SET `valid` = FALSE WHERE `username` = ?", [username, ])
+        return False
     elif (user_info["code"] != 200):
-        return
+        return False
     else:
-        message = ""
         send = False
         for module in user_info["data"]["modules"]:
             if (module["updated"]):
                 send = True
-                message += "<p><b>{}: {}</b></p>".format(module["module_name"], module["final_grade"])
-                message += "<table style='margin-left: 5em'>"
-                for grade in module["grades"]:
-                    message += "<tr>"
-                    message += "<td>{}:</td><td>{}</td>".format(grade["name"], grade["grade"])
-                    message += "</tr>"
-                message += "</table>"
-        if (send):
-            send_html_mail(user_info["data"]["name"], user[2], "Dualis Parser - Grades Updated!", message)
+        return send
 
 
 if __name__ == '__main__':
     mysql = MySQL()
-    to_check = mysql.query("SELECT * FROM `subscription` WHERE `valid`", [])
+    to_check = mysql.query("SELECT * FROM `course` WHERE `valid`", [])
 
-    pool = Pool(8)
     for user in to_check:
-        pool.apply_async(check_and_send_mail, (user,))
-
-    pool.close()
-    pool.join()
+        mail_test = check_and_send_mail(user)
+        if mail_test:
+            print("Send mail to course " + user[0])
+            send_to = mysql.query("SELECT * FROM `subscription` WHERE `course` = ?", [user[0], ])
+            for rec in send_to:
+                send_html_mail(
+                    rec[2], rec[1], "Dualis Parser - Grade may be Updated",
+                    "Your course may have some new grades! <br> Check it out"
+                )
