@@ -22,17 +22,19 @@ def log_response_info(response):
     return response
 
 
-@server.route("/dualis/user", methods=["GET", ])
-def user_info():
+@server.route("/dualis/user/<string:username>", methods=["GET", ])
+def user_info(username: str):
     """
-    Parse the user info. Required body json params are:
+    Parse the user info.
 
-    username: "surname.lastname@domain",
-    password: "password"
+    username: "surname.lastname@domain" - as url content
+    password: "password" - as Private-Token header
+
+    :param username: The username
 
     :return: the parsed user information as json (for format see documentation)
     """
-    code, result = get_user_information(dict(request.args))
+    code, result = get_user_information({"username": username, "password": request.headers.get("Private-Token")})
 
     if code == constants.BAD_LOGIN:
         # HTTP 401
@@ -51,9 +53,8 @@ def user_info():
 
         from database.mysql_connection import MySQL
         mysql = MySQL()
-        mysql.query(
-            "INSERT INTO api_request VALUES(%s, CURRENT_TIMESTAMP(), 1) ON DUPLICATE KEY UPDATE last_update=CURRENT_TIMESTAMP(), request_count = request_count + 1",
-            (user,))
+        mysql.query("INSERT INTO api_request VALUES(%s, CURRENT_TIMESTAMP(), 1) ON DUPLICATE KEY UPDATE "
+                    "last_update=CURRENT_TIMESTAMP(), request_count = request_count + 1", (user,))
         for module in result.get("modules"):
             module_no = module.get("module_no")
             grade = module.get("final_grade")
@@ -63,7 +64,8 @@ def user_info():
             grade = grade if grade.replace('.', '', 1).isdigit() else None
 
             mysql.query(
-                "INSERT INTO new_module VALUES(%s, %s, %s, %s, %s) ON DUPLICATE KEY UPDATE grade=%s, passed=%s, exams=%s",
+                "INSERT INTO new_module VALUES(%s, %s, %s, %s, %s) ON DUPLICATE KEY UPDATE "
+                "grade=%s, passed=%s, exams=%s",
                 (user, module_no, grade, passed, exams, grade, passed, exams)
             )
         mysql.close()
@@ -76,15 +78,15 @@ def user_info():
     return jsonify(http_result), http_result["code"]
 
 
-@server.route("/dualis/user/validate", methods=["GET", ])
-def is_valid_user():
+@server.route("/dualis/user/validate/<string:username>", methods=["GET", ])
+def is_valid_user(username: str):
     """
     Return whether the given user data is valid
 
     :return: true or false
     :rtype: bool
     """
-    result = is_authenticated_user(dict(request.args))
+    result = is_authenticated_user({"username": username, "password": request.headers.get("Private-Token")})
     if (result == constants.DUALIS_ERROR):
         # dualis error
         http_result = constants.HTTP_503_SERVICE_UNAVAILABLE.copy()
