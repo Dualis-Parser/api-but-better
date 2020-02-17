@@ -8,6 +8,4 @@ RUN pip install -r requirements.txt
 
 COPY . /app
 
-ENTRYPOINT [ "python" ]
-
-CMD [ "run.py" ]
+CMD [ "uwsgi", "--ini", "app.ini" ]

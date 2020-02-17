@@ -7,6 +7,9 @@ from flask_cors import CORS
 
 from api.user.requests import get_user_information, is_authenticated_user
 from utils import constants
+from utils.logger import init_logger
+
+init_logger()
 
 server = Flask(__name__)
 CORS(server)
