@@ -6,4 +6,4 @@ if (__name__ == "__main__"):
 
     server = api.server
 
-    server.run(port=9001)
+    server.run(host='0.0.0.0')
