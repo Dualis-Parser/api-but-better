@@ -5,4 +5,3 @@ beautifulsoup4==4.8.2
 mysql-connector-python==8.0.19
 certifi==2019.11.28
 lxml==4.5.0
-uWSGI==2.0.18
