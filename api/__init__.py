@@ -1,18 +1,28 @@
 import json
 import logging
 
+import requests
 import werkzeug.exceptions
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from healthcheck import HealthCheck
 
 from api.user.requests import get_user_information, is_authenticated_user
 from utils import constants
-from utils.logger import init_logger
-
-init_logger()
 
 server = Flask(__name__)
 CORS(server)
+
+health = HealthCheck()
+
+
+def dualis_available():
+    status = requests.head("https://dualis.dhbw.de").status_code
+    return status == 200, "dualis web " + "ok" if status == 200 else "down"
+
+
+health.add_check(dualis_available)
+server.add_url_rule("/healthcheck", "healthcheck", view_func=lambda: health.run())
 
 
 @server.before_request
@@ -87,10 +97,9 @@ def is_valid_user(username: str):
     Return whether the given user data is valid
 
     :return: true or false
-    :rtype: bool
     """
     result = is_authenticated_user({"username": username, "password": request.headers.get("Private-Token")})
-    if (result == constants.DUALIS_ERROR):
+    if result == constants.DUALIS_ERROR:
         # dualis error
         http_result = constants.HTTP_503_SERVICE_UNAVAILABLE.copy()
         http_result["details"] = "dualis request failed unexpectedly"

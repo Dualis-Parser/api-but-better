@@ -1,5 +1,6 @@
 import json
 import logging
+from typing import Tuple, Union
 
 import requests
 
@@ -12,15 +13,17 @@ from utils.make_http_request import make_request
 from utils.change_util import check_for_change
 
 
-def get_user_information(request):
+def get_user_information(request: dict) -> Union[Tuple[int, str], Tuple[int, dict], Tuple[int, None]]:
     """
     Get the user information (for format check the docs)
+    Tuple content type dependent on status code:
+    - on success: dict
+    - on bad login: str
+    - on dualis error: None
 
     :param request: the request json body
-    :type request: dict
 
     :return: the user information
-    :rtype: tuple(int, dict)
     """
     # validate login credentials (format only)
 
@@ -41,15 +44,13 @@ def get_user_information(request):
     return constants.SUCCESS, user_info
 
 
-def is_authenticated_user(request):
+def is_authenticated_user(request: dict) -> Union[int, bool]:
     """
     Check whether the users data is valid
 
     :param request: the request json body
-    :type request: dict
 
     :return: whether the user is valid
-    :rtype: bool
     """
     if type(request) != dict:
         return constants.BAD_REQUEST
@@ -64,7 +65,7 @@ def is_authenticated_user(request):
     with requests.Session() as session:
         login_res = login.do_login(session, username, password)
 
-        if (not isinstance(login_res, requests.Response)):
+        if not isinstance(login_res, requests.Response):
             if login_res == constants.BAD_LOGIN:
                 return False
             else:
@@ -73,15 +74,12 @@ def is_authenticated_user(request):
             return True
 
 
-def parse_user_information(username, password):
+def parse_user_information(username: str, password: str) -> Union[dict, int]:
     """
     All relevant parsing calls for the user information api call happens in here
 
     :param username: the dualis username (valid email format)
     :param password: the dualis password (plain)
-
-    :type username: str
-    :type password: str
 
     :return: the complete user information
     """
@@ -97,7 +95,7 @@ def parse_user_information(username, password):
         # perform the login
         login_res = login.do_login(session, username, password)
 
-        if (not isinstance(login_res, requests.Response)):
+        if not isinstance(login_res, requests.Response):
             if login_res == constants.BAD_LOGIN:
                 return constants.BAD_LOGIN
             else:
@@ -112,7 +110,7 @@ def parse_user_information(username, password):
         # find the exams page (for all languages)
         exams_page_url = constants.DUALIS_BASE_URI
         for link in user_data["navigation"].values():
-            if (constants.EXAM_OVERVIEW_PAGE in link):
+            if constants.EXAM_OVERVIEW_PAGE in link:
                 exams_page_url += link
 
         # navigate to the exams page
