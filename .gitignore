@@ -6,4 +6,3 @@ __pycache__
 venv
 
 error.log
-secret_config.py

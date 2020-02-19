@@ -1,23 +1,14 @@
 import mysql.connector
-from mysql.connector import errorcode
 from mysql.connector.cursor import MySQLCursorPrepared
 
-import secret_config
+from os import environ
 
 
 class MySQL:
     def __init__(self):
-        try:
-            self.cnx = mysql.connector.connect(user=secret_config.db_user, password=secret_config.db_password,
-                                               host=secret_config.db_host, database=secret_config.db_name,
-                                               use_pure=True)
-        except mysql.connector.Error as err:
-            if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-                print("Something is wrong with your user name or password")
-            elif err.errno == errorcode.ER_BAD_DB_ERROR:
-                print("Database does not exist")
-            else:
-                print(err)
+        self.cnx = mysql.connector.connect(user=environ.get("DATABASE_USER"), password=environ.get("DATABASE_PASSWORD"),
+                                           host=environ.get("DATABASE_HOST"), database=environ.get("DATABASE_NAME"),
+                                           use_pure=True)
 
     def query(self, query, params):
         cursor = self.cnx.cursor(cursor_class=MySQLCursorPrepared)

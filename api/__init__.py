@@ -22,7 +22,7 @@ def log_response_info(response):
     return response
 
 
-@server.route("/dualis/user/<string:username>", methods=["GET", ])
+@server.route("/user/<string:username>", methods=["GET", ])
 def user_info(username: str):
     """
     Parse the user info.
@@ -78,7 +78,7 @@ def user_info(username: str):
     return jsonify(http_result), http_result["code"]
 
 
-@server.route("/dualis/user/validate/<string:username>", methods=["GET", ])
+@server.route("/user/validate/<string:username>", methods=["GET", ])
 def is_valid_user(username: str):
     """
     Return whether the given user data is valid
