@@ -36,7 +36,9 @@ deploy-release:
   script:
     - cd /opt/services/dualis
     - docker-compose pull $COMPOSE_SERVICE_NAME
-    - docker-compose restart $COMPOSE_SERVICE_NAME
+    - docker-compose stop $COMPOSE_SERVICE_NAME
+    - docker-compose rm $COMPOSE_SERVICE_NAME
+    - docker-compose up -d
   only:
     - master # only deploy a real release
   tags:
