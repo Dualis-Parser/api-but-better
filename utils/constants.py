@@ -1,3 +1,6 @@
+# flag whether dualis requests are successfull
+DUALIS_OK: bool = True
+
 # internal error codes
 SUCCESS: int = 0
 BAD_LOGIN: int = 1
