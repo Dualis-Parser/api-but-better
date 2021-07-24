@@ -1,16 +1,20 @@
 import json
 import logging
 
-import requests
 import werkzeug.exceptions
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, session, copy_current_request_context
+from flask_socketio import SocketIO, emit, disconnect
 from flask_cors import CORS
 from healthcheck import HealthCheck
 
 from api.user.requests import get_user_information, is_authenticated_user
 from utils import constants
+from utils.http_object_prepare import prepare_from_user_auth
+
+async_mode = None
 
 server = Flask(__name__)
+socket_ = SocketIO(server, async_mode=async_mode, cors_allowed_origins='*')
 CORS(server)
 
 health = HealthCheck()
@@ -100,26 +104,40 @@ def is_valid_user(username: str):
     :return: true or false
     """
     result = is_authenticated_user({"username": username, "password": request.headers.get("Private-Token")})
-    if result == constants.DUALIS_ERROR:
-        constants.DUALIS_OK = False
-        # dualis error
-        http_result = constants.HTTP_503_SERVICE_UNAVAILABLE.copy()
-        http_result["details"] = "dualis request failed unexpectedly"
-    elif result == constants.BAD_REQUEST:
-        # malformed request
-        http_result = constants.HTTP_400_BAD_REQUEST.copy()
-        http_result["details"] = "the server couldn't understand your request"
-    elif result is False or result is True:
-        constants.DUALIS_OK = True
-        # send bool response
-        http_result = constants.HTTP_200_OK.copy()
-        http_result["data"] = result
-    else:
-        # should never happen, internal server error
-        http_result = constants.HTTP_500_INTERNAL_SERVER_ERROR.copy()
-        http_result["details"] = "WTF? Impossible point of code reached. Congrats"
+    http_result = prepare_from_user_auth(result)
 
     return jsonify(http_result), http_result["code"]
+
+
+@socket_.on('user_auth')
+def ws_is_valid_user(message):
+    logging.info("Received user_auth message")
+
+    result = is_authenticated_user({"username": message.get("username", None), "password": message.get("password", None)})
+    http_result = prepare_from_user_auth(result)
+
+    session['receive_count'] = session.get('receive_count', 0) + 1
+    emit('user_auth_response', http_result)
+
+
+@socket_.on('modules')
+def test_broadcast_message(message):
+    session['receive_count'] = session.get('receive_count', 0) + 1
+    emit('my_response',
+         {'data': message['data'], 'count': session['receive_count']},
+         broadcast=True)
+
+
+@socket_.on('disconnect_request')
+def disconnect_request():
+    @copy_current_request_context
+    def can_disconnect():
+        disconnect()
+
+    session['receive_count'] = session.get('receive_count', 0) + 1
+    emit('my_response',
+         {'data': 'Disconnected!', 'count': session['receive_count']},
+         callback=can_disconnect)
 
 
 @server.errorhandler(Exception)
