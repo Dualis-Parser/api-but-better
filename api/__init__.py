@@ -9,7 +9,7 @@ from healthcheck import HealthCheck
 
 from api.user.requests import get_user_information, is_authenticated_user
 from utils import constants
-from utils.http_object_prepare import prepare_from_user_auth
+from utils.http_object_prepare import prepare_from_user_auth, prepare_from_user_info
 
 async_mode = None
 
@@ -52,46 +52,7 @@ def user_info(username: str):
     """
     code, result = get_user_information({"username": username, "password": request.headers.get("Private-Token")})
 
-    if code == constants.BAD_LOGIN:
-        # HTTP 401
-        http_result = constants.HTTP_401_UNAUTHORIZED.copy()
-        http_result["details"] = result
-    elif code == constants.DUALIS_ERROR:
-        constants.DUALIS_OK = False
-        # HTTP 503
-        http_result = constants.HTTP_503_SERVICE_UNAVAILABLE.copy()
-        http_result["details"] = "dualis request failed unexpectedly"
-    elif code == constants.SUCCESS:
-        constants.DUALIS_OK = True
-        # HTTP 200
-        http_result = constants.HTTP_200_OK.copy()
-        http_result["data"] = result
-
-        user = result.get("username")
-
-        from database.mysql_connection import MySQL
-        mysql = MySQL()
-        mysql.query("INSERT INTO api_request VALUES(%s, CURRENT_TIMESTAMP(), 1) ON DUPLICATE KEY UPDATE "
-                    "last_update=CURRENT_TIMESTAMP(), request_count = request_count + 1", (user,))
-        for module in result.get("modules"):
-            module_no = module.get("module_no")
-            grade = module.get("final_grade")
-            passed = module.get("passed")
-            exams = json.dumps(module.get("grades"))
-
-            grade = grade if grade.replace('.', '', 1).isdigit() else None
-
-            mysql.query(
-                "INSERT INTO new_module VALUES(%s, %s, %s, %s, %s) ON DUPLICATE KEY UPDATE "
-                "grade=%s, passed=%s, exams=%s",
-                (user, module_no, grade, passed, exams, grade, passed, exams)
-            )
-        mysql.close()
-
-    else:
-        # should never happen, internal server error
-        http_result = constants.HTTP_500_INTERNAL_SERVER_ERROR.copy()
-        http_result["details"] = "WTF? Impossible point of code reached"
+    http_result = prepare_from_user_info(code, result)
 
     return jsonify(http_result), http_result["code"]
 
@@ -112,20 +73,33 @@ def is_valid_user(username: str):
 @socket_.on('user_auth')
 def ws_is_valid_user(message):
     logging.info("Received user_auth message")
+    session["username"] = message.get("username", None)
+    session["password"] = message.get("password", None)
 
-    result = is_authenticated_user({"username": message.get("username", None), "password": message.get("password", None)})
+    result = is_authenticated_user({"username": session.get("username"), "password": session.get("password")})
     http_result = prepare_from_user_auth(result)
 
     session['receive_count'] = session.get('receive_count', 0) + 1
     emit('user_auth_response', http_result)
 
 
-@socket_.on('modules')
-def test_broadcast_message(message):
-    session['receive_count'] = session.get('receive_count', 0) + 1
-    emit('my_response',
-         {'data': message['data'], 'count': session['receive_count']},
-         broadcast=True)
+@socket_.on('user_info')
+def ws_user_info():
+    if not (session.get("username") or session.get("password")):
+        http_result = constants.HTTP_401_UNAUTHORIZED.copy()
+        http_result["details"] = "Authorization required! (call user_auth)"
+        emit('user_info_response', http_result)
+
+    logging.info("Request for module data by {}".format(session.get("username")))
+    code, result = get_user_information({"username": session.get("username"), "password": session.get("password")}, emit)
+
+    if code == constants.BAD_LOGIN or code == constants.DUALIS_ERROR:
+        http_result = constants.HTTP_503_SERVICE_UNAVAILABLE.copy()
+        http_result["details"] = "dualis request failed unexpectedly"
+    else:
+        http_result = constants.HTTP_204_NO_CONTENT.copy()
+        http_result["details"] = "all contents loaded"
+    emit('user_info_response', http_result)
 
 
 @socket_.on('disconnect_request')

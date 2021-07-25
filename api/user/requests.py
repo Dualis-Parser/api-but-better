@@ -3,17 +3,15 @@ import logging
 from typing import Tuple, Union
 
 import requests
-
 from dualis import login
 from dualis.user import parse_users_name, parse_users_modules, filter_modules, parse_grades
 from dualis.util import *
 from utils import constants
 from utils.mail import is_valid_email
 from utils.make_http_request import make_request
-from utils.change_util import check_for_change
 
 
-def get_user_information(request: dict) -> Union[Tuple[int, str], Tuple[int, dict], Tuple[int, None]]:
+def get_user_information(request: dict, emit=None) -> Union[Tuple[int, str], Tuple[int, dict], Tuple[int, None]]:
     """
     Get the user information (for format check the docs)
     Tuple content type dependent on status code:
@@ -22,6 +20,7 @@ def get_user_information(request: dict) -> Union[Tuple[int, str], Tuple[int, dic
     - on dualis error: None
 
     :param request: the request json body
+    :param emit: the flask socket IO emit function
 
     :return: the user information
     """
@@ -35,7 +34,7 @@ def get_user_information(request: dict) -> Union[Tuple[int, str], Tuple[int, dic
     elif not is_valid_email(request.get("username")):
         return constants.BAD_LOGIN, "Invalid username format"
 
-    user_info = parse_user_information(request.get("username"), request.get("password"))
+    user_info = parse_user_information(request.get("username"), request.get("password"), emit)
     if user_info == constants.BAD_LOGIN:
         return constants.BAD_LOGIN, "Invalid username or password"
     elif user_info == constants.DUALIS_ERROR:
@@ -74,12 +73,13 @@ def is_authenticated_user(request: dict) -> Union[int, bool]:
             return True
 
 
-def parse_user_information(username: str, password: str) -> Union[dict, int]:
+def parse_user_information(username: str, password: str, emit=None) -> Union[dict, int]:
     """
     All relevant parsing calls for the user information api call happens in here
 
     :param username: the dualis username (valid email format)
     :param password: the dualis password (plain)
+    :param emit: the flask socket IO emit function
 
     :return: the complete user information
     """
@@ -103,6 +103,8 @@ def parse_user_information(username: str, password: str) -> Union[dict, int]:
 
         # find the users name in the html
         user_data["name"] = parse_users_name(login_res.text)
+        if emit:
+            emit("name", user_data["name"])
 
         # find the navigation list
         user_data["navigation"] = dict(get_navigation(login_res.text))
@@ -131,14 +133,15 @@ def parse_user_information(username: str, password: str) -> Union[dict, int]:
             semester_html[name] = semester.text
 
         # get all modules for all semesters
-        user_data["modules"] = parse_users_modules(semester_html)
+        user_data["modules"] = parse_users_modules(semester_html, emit)
 
         for module in user_data["modules"]:
             exams_url = constants.DUALIS_BASE_URI + module["exams_url"]
             module["grades"] = list(parse_grades(make_request(session, exams_url, method="get").text))
+            if emit and len(module["grades"]) > 0:
+                emit("grades", module)
 
         logging.info("parsed modules")
 
         user_data["modules"] = filter_modules(user_data["modules"])
-        check_for_change(user_data["modules"], username)
     return user_data

@@ -1,4 +1,4 @@
-# flag whether dualis requests are successfull
+# flag whether dualis requests are successful
 DUALIS_OK: bool = True
 
 # internal error codes
@@ -11,6 +11,11 @@ BAD_REQUEST: int = 3
 HTTP_200_OK = {
     "code": 200,
     "description": "OK"
+}
+
+HTTP_204_NO_CONTENT = {
+    "code": 204,
+    "description": "No Content"
 }
 
 HTTP_400_BAD_REQUEST = {

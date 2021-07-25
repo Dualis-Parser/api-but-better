@@ -19,11 +19,12 @@ def parse_users_name(html):
     return soup.find(id="loginDataName").text.split("Name:")[-1].strip()
 
 
-def parse_users_modules(semester_html):
+def parse_users_modules(semester_html, emit=None):
     """
     parse the modules from the modules html file
 
     :param semester_html: the html strings for all semesters
+    :param emit: the flask socket IO emit function
     :type semester_html: dict
 
     :return: the modules
@@ -42,9 +43,12 @@ def parse_users_modules(semester_html):
                 module["semesters"] = semester
                 logging.debug("\t%s" % module.get("module_name"))
 
+                # TODO implement check for different degrees (Jans problem lol)
                 # avoid duplicates if a module is present in multiple semesters
-                if (len(list(filter(lambda mod: mod["module_no"] == module["module_no"], modules))) == 0):
+                if len(list(filter(lambda mod: mod["module_no"] == module["module_no"], modules))) == 0:
                     modules.append(module)
+                    if emit and module["final_grade"]:
+                        emit("module", module)
                 else:
                     list(filter(lambda mod: mod["module_no"] == module["module_no"], modules))[0][
                         "semesters"] += ", " + semester
