@@ -1,4 +1,4 @@
-# Dualis API
+# Dualis API: WIP
 
 ## Requirements
 Should be able to return all modules and it's grades for a specific user from dualis.dhbw.de.
