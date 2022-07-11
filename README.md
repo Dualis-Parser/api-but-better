@@ -6,3 +6,4 @@ This should work for any grade and probably store the grades in a specified data
 
 ### Email notifications
 Additional any user who wants to should get an email if a grade has been updated.
+
